@@ -14,5 +14,7 @@
             "email": "yvo@muze.nl"
         }
     ],
-    "require": {}
+    "require": {
+        "league/flysystem": "^1.0"
+    }
 }
