@@ -1,24 +1,18 @@
 {
-  "autoload": {
-    "psr-4": {
-      "Pdsinterop\\Flysystem\\Adapter\\": "src/"
-    }
-  },
-  "config": {
-    "sort-packages": true,
-    "bin-dir": "./bin",
-    "platform": {
-      "php": "8.0",
-      "ext-mbstring": "0.0.0"
-    }
-  },
-  "description": "Flysystem adapter for Ariadne.",
-  "license": "MIT",
-  "name": "muze-nl/flysystem-ariadne",
-  "require": {
-    "php": "^8.0",
-    "ext-mbstring": "*",
-    "league/flysystem": "^1.0"
-  },
-  "type": "library"
+    "name": "muze-nl/flysystem-ariadne",
+    "description": "Flysystem adapter for Ariadne",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "MuzeNl\\Flysystem\\Adapter\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Yvo Brevoort",
+            "email": "yvo@muze.nl"
+        }
+    ],
+    "require": {}
 }
