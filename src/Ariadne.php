@@ -199,7 +199,7 @@ class Ariadne implements AdapterInterface
     final public function has($path)
     {
         $fullpath = $this->getFullPath($path);
-        return $rootOb->exists($fullpath);
+        return $this->rootObject->exists($fullpath);
     }
 
     /**
@@ -214,11 +214,11 @@ class Ariadne implements AdapterInterface
     {
         $result = [];
         $directory = $this->getObject($directory);
+
         if (!$directory) {
             return [];
         }
-        
-        $nodes = $directory->ls("system.get.phtml");
+        $nodes = $directory->ls($directory->path, "system.get.phtml");
         $result = array_map(function($node) {
             return $this->normalizeNodeInfo($node);
         }, $nodes);
@@ -241,7 +241,7 @@ class Ariadne implements AdapterInterface
         if (!$node) {
             return false;
         }
-        return $this->normlalizeNodeInfo($node, [
+        return $this->normalizeNodeInfo($node, [
             'contents' => $node->getFile()
         ]);
     }
@@ -438,22 +438,67 @@ class Ariadne implements AdapterInterface
      */
     private function normalizeNodeInfo($node, array $metaData = []) : array
     {
-        $defaultNls = $node->data->nls->default;
-        return array_merge([
-            'mimetype' => $this->isDirectory($node) ? "directory" : $node->data->mimetype,
-            'path' => substr($node->path, strlen($this->rootPath)+1),
-            'size' => $node->data->$defaultNls->filesize,
-            'basename' => basename($node->path),
-            'timestamp' => $node->data->mtime,
-            'type' => $node->type,
-            // @FIXME: Use $node->getPermissions() to set private or public
-            //         as soon as we figure out what Nextcloud permissions mean in this context
-            'visibility' => 'public',
-            /*/
-            'CreationTime' => $node->getCreationTime(),
-            'Etag' => $node->getEtag(),
-            'Owner' => $node->getOwner(),
-            /*/
-        ], $metaData);
+        $dirPath = substr($node->path, strlen($this->rootPath));
+        $filePath = substr($dirPath, 0, -1);
+        
+        switch ($node->type) {
+            case "pdir":
+                $defaultNls = $node->data->nls->default;
+                return array_merge([
+                    'mimetype' => "directory",
+                    'path' => $dirPath,
+                    'size' => $node->size,
+                    'basename' => basename($node->path),
+                    'timestamp' => $node->data->mtime,
+                    'type' => $node->type,
+                    // @FIXME: Use $node->getPermissions() to set private or public
+                    //         as soon as we figure out what Nextcloud permissions mean in this context
+                    'visibility' => 'public',
+                    /*/
+                    'CreationTime' => $node->getCreationTime(),
+                    'Etag' => $node->getEtag(),
+                    'Owner' => $node->getOwner(),
+                    /*/
+                ], $metaData);
+            break;
+            case "pfile":
+                $defaultNls = $node->data->nls->default;
+                return array_merge([
+                    'mimetype' => $node->data->mimetype,
+                    'path' => $filePath,
+                    'size' => $node->data->$defaultNls->filesize,
+                    'basename' => basename($node->path),
+                    'timestamp' => $node->data->mtime,
+                    'type' => $node->type,
+                    // @FIXME: Use $node->getPermissions() to set private or public
+                    //         as soon as we figure out what Nextcloud permissions mean in this context
+                    'visibility' => 'public',
+                    /*/
+                    'CreationTime' => $node->getCreationTime(),
+                    'Etag' => $node->getEtag(),
+                    'Owner' => $node->getOwner(),
+                    /*/
+                ], $metaData);
+            break;
+            default:
+                $defaultNls = $node->data->nls->default;
+                return array_merge([
+                    'mimetype' => $node->type,
+                    'path' => $filePath,
+                    'size' => $node->size,
+                    'basename' => basename($node->path),
+                    'timestamp' => $node->data->mtime,
+                    'type' => $node->type,
+                    // @FIXME: Use $node->getPermissions() to set private or public
+                    //         as soon as we figure out what Nextcloud permissions mean in this context
+                    'visibility' => 'public',
+                    /*/
+                    'CreationTime' => $node->getCreationTime(),
+                    'Etag' => $node->getEtag(),
+                    'Owner' => $node->getOwner(),
+                    /*/
+                ], $metaData);
+            break;
+        }
     }
 }
