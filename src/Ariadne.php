@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Pdsinterop\Flysystem\Adapter;
+namespace MuzeNl\Flysystem\Adapter;
 
 use League\Flysystem\AdapterInterface;
 use League\Flysystem\Config;
