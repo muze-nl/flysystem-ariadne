@@ -11,6 +11,7 @@ use League\Flysystem\Config;
 class Ariadne implements AdapterInterface
 {
     private $rootObject;
+    private $rootPath;
 
     final public function __construct($rootObject)
     {
