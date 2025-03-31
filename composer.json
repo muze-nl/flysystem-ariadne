@@ -1,0 +1,24 @@
+{
+  "autoload": {
+    "psr-4": {
+      "Pdsinterop\\Flysystem\\Adapter\\": "src/"
+    }
+  },
+  "config": {
+    "sort-packages": true,
+    "bin-dir": "./bin",
+    "platform": {
+      "php": "8.0",
+      "ext-mbstring": "0.0.0"
+    }
+  },
+  "description": "Flysystem adapter for Ariadne.",
+  "license": "MIT",
+  "name": "muze-nl/flysystem-ariadne",
+  "require": {
+    "php": "^8.0",
+    "ext-mbstring": "*",
+    "league/flysystem": "^1.0"
+  },
+  "type": "library"
+}
