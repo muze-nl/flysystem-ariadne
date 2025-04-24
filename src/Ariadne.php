@@ -62,25 +62,34 @@ class Ariadne implements AdapterInterface
     final public function createDir($dirname, Config $config)
     {
         $pathicles = explode("/", $dirname);
-        $path = $this->rootPath;
+        $path = "/";
         $parent = $path;
         while (sizeof($pathicles)) {
             $parent = $path;
-            $path .= shift($pathicles) . "/";
+            $path .= array_shift($pathicles) . "/";
             if (!$this->has($path)) {
                 $node = $this->getObject($parent);
                 $defaultNls = $node->data->nls->default;
                 $node->call("system.new.phtml", array(
                     "arNewType" => "pdir",
                     "arNewFilename" => basename($path),
-                    "data" => array(
-                        $defaultNls => array(
-                            "name" => basename($path)
-                        )
+                    $defaultNls => array(
+                        "name" => basename($path)
                     )
                 ));
             }
         }
+
+        $node = $this->getObject($parent);
+        $defaultNls = $node->data->nls->default;
+        $node->call("system.new.phtml", array(
+            "arNewType" => "pdir",
+            "arNewFilename" => basename($path),
+            $defaultNls => array(
+                "name" => basename($path)
+            )
+        ));
+
         return ['path' => $dirname, 'type' => 'dir'];
     }
 
@@ -350,17 +359,15 @@ class Ariadne implements AdapterInterface
                 $filename = basename($path);
                 $dirname = dirname($path);
                 if (!$this->has($dirname)) {
-                    $this->createFolder($dirname, $config);
+                    $this->createDir($dirname, $config);
                 }
-
                 $node = $this->getObject($dirname);
+                $defaultNls = $node->data->nls->default;
                 $node->call("system.new.phtml", array(
                     "arNewType" => "pfile",
                     "arNewFilename" => $filename,
-                    "data" => array(
-                        $defaultNls => array(
-                            "name" => $filename
-                        )
+                    $defaultNls => array(
+                        "name" => $filename
                     )
                 ));
                 $file = $this->getObject($path);
@@ -397,7 +404,7 @@ class Ariadne implements AdapterInterface
                 $filename = basename($path);
                 $dirname = dirname($path);
                 if (!$this->has($dirname)) {
-                    $this->createFolder($dirname, $config);
+                    $this->createDir($dirname, $config);
                 }
 
                 $node = $this->getObject($dirname);
@@ -450,9 +457,8 @@ class Ariadne implements AdapterInterface
                     'size' => $node->size,
                     'basename' => basename($node->path),
                     'timestamp' => $node->data->mtime,
-                    'type' => $node->type,
-                    // @FIXME: Use $node->getPermissions() to set private or public
-                    //         as soon as we figure out what Nextcloud permissions mean in this context
+                    'type' => "dir",
+                    // @FIXME: check grants to set private or public
                     'visibility' => 'public',
                     /*/
                     'CreationTime' => $node->getCreationTime(),
@@ -464,14 +470,13 @@ class Ariadne implements AdapterInterface
             case "pfile":
                 $defaultNls = $node->data->nls->default;
                 return array_merge([
-                    'mimetype' => $node->data->mimetype,
+                    'mimetype' => $node->data->$defaultNls->mimetype ?? "text/turtle",
                     'path' => $filePath,
-                    'size' => $node->data->$defaultNls->filesize,
+                    'size' => $node->size,
                     'basename' => basename($node->path),
                     'timestamp' => $node->data->mtime,
-                    'type' => $node->type,
-                    // @FIXME: Use $node->getPermissions() to set private or public
-                    //         as soon as we figure out what Nextcloud permissions mean in this context
+                    'type' => "file",
+                    // @FIXME: check grants to set private or public
                     'visibility' => 'public',
                     /*/
                     'CreationTime' => $node->getCreationTime(),
@@ -488,9 +493,8 @@ class Ariadne implements AdapterInterface
                     'size' => $node->size,
                     'basename' => basename($node->path),
                     'timestamp' => $node->data->mtime,
-                    'type' => $node->type,
-                    // @FIXME: Use $node->getPermissions() to set private or public
-                    //         as soon as we figure out what Nextcloud permissions mean in this context
+                    'type' => "file",
+                    // @FIXME: check grants to set private or public
                     'visibility' => 'public',
                     /*/
                     'CreationTime' => $node->getCreationTime(),
