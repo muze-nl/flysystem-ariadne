@@ -59,7 +59,7 @@ class Ariadne implements AdapterInterface
      *
      * @return array|false
      */
-    final public function createDir($dirname, Config $config)
+    final public function createDirectory($dirname, Config $config)
     {
         $pathicles = explode("/", $dirname);
         $path = "/";
@@ -119,7 +119,7 @@ class Ariadne implements AdapterInterface
      *
      * @return bool
      */
-    final public function deleteDir($dirname)
+    final public function deleteDirectory($dirname)
     {
         $node = $this->getObject($path);
         if (!$node) {
@@ -157,7 +157,7 @@ class Ariadne implements AdapterInterface
      *
      * @return array|false
      */
-    final public function getMimeType($path)
+    final public function mimeType($path)
     {
         return $this->getMetadata($path);
     }
@@ -169,7 +169,7 @@ class Ariadne implements AdapterInterface
      *
      * @return array|false
      */
-    final public function getSize($path)
+    final public function fileSize($path)
     {
         return $this->getMetadata($path);
     }
@@ -181,7 +181,7 @@ class Ariadne implements AdapterInterface
      *
      * @return array|false
      */
-    final public function getTimestamp($path)
+    final public function lastModified($path)
     {
         return $this->getMetadata($path);
     }
@@ -193,7 +193,7 @@ class Ariadne implements AdapterInterface
      *
      * @return array|false
      */
-    final public function getVisibility($path)
+    final public function visibility($path)
     {
         return $this->getMetadata($path);
     }
@@ -205,10 +205,22 @@ class Ariadne implements AdapterInterface
      *
      * @return array|bool|null
      */
-    final public function has($path)
+    final public function fileExists($path)
     {
         $fullpath = $this->getFullPath($path);
         return $this->rootObject->exists($fullpath);
+    }
+
+    /**
+     * Check whether a directory exists.
+     *
+     * @param string $path
+     *
+     * @return array|bool|null
+     */
+    final public function direcotryExists($path)
+    {
+        return $this->fileExists($path);
     }
 
     /**
@@ -281,7 +293,7 @@ class Ariadne implements AdapterInterface
      *
      * @return bool
      */
-    final public function rename($path, $newpath)
+    final public function move($path, $newpath)
     {
         $node = $this->getObject($path);
         if (!$node) {
@@ -305,34 +317,6 @@ class Ariadne implements AdapterInterface
     final public function setVisibility($path, $visibility)
     {
         return false;
-    }
-
-    /**
-     * Update a file.
-     *
-     * @param string $path
-     * @param string $contents
-     * @param Config $config Config object
-     *
-     * @return array|false false on failure file meta data on success
-     */
-    final public function update($path, $contents, Config $config)
-    {
-        return $this->write($path, $contents, $config);
-    }
-
-    /**
-     * Update a file using a stream.
-     *
-     * @param string $path
-     * @param resource $resource
-     * @param Config $config Config object
-     *
-     * @return array|false false on failure file meta data on success
-     */
-    final public function updateStream($path, $resource, Config $config)
-    {
-        return $this->writeStream($path, $resource, $config);
     }
 
     /**
