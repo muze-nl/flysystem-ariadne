@@ -2,13 +2,14 @@
 
 namespace MuzeNl\Flysystem\Adapter;
 
-use League\Flysystem\AdapterInterface;
+use League\Flysystem\FilesystemAdapter;
+use League\Flysystem\FileAttributes;
 use League\Flysystem\Config;
 
 /**
  * Filesystem adapter to access files (pdir and pfile) in Ariadne
  */
-class Ariadne implements AdapterInterface
+class Ariadne implements FilesystemAdapter
 {
     private $rootObject;
     private $rootPath;
@@ -35,20 +36,18 @@ class Ariadne implements AdapterInterface
      *
      * @param string $path
      * @param string $newpath
-     *
-     * @return bool
+     * @param Config $config
      */
-    final public function copy($path, $newpath)
+    final public function copy(string $path, string $newpath, Config $config): void
     {
         $node = $this->getObject($path);
         if (!$node) {
-            return false;
+            return; // FIXME: throw
         }
         $fullnewpath = $this->getFullPath($newpath);
         $node->call("system.copyto.phtml", array(
             "target" => $fullnewpath
         ));
-        return true;
     }
 
     /**
@@ -56,10 +55,8 @@ class Ariadne implements AdapterInterface
      *
      * @param string $dirname directory name
      * @param Config $config
-     *
-     * @return array|false
      */
-    final public function createDirectory($dirname, Config $config)
+    final public function createDirectory(string $dirname, Config $config): void
     {
         $pathicles = explode("/", $dirname);
         $path = "/";
@@ -89,49 +86,40 @@ class Ariadne implements AdapterInterface
                 "name" => basename($path)
             )
         ));
-
-        return ['path' => $dirname, 'type' => 'dir'];
     }
 
     /**
      * Delete a file.
      *
      * @param string $path
-     *
-     * @return bool
-     *
      */
-    final public function delete($path)
+    final public function delete(string $path): void
     {
         $node = $this->getObject($path);
         if (!$node) {
-            return false;
+            return;
         }
         
         $node->call("system.delete.phtml");
-        return true;
     }
 
     /**
      * Delete a directory.
      *
      * @param string $dirname
-     *
-     * @return bool
      */
-    final public function deleteDirectory($dirname)
+    final public function deleteDirectory(string $dirname): void
     {
         $node = $this->getObject($path);
         if (!$node) {
-            return false;
+            return; // FIXME: throw
         }
             
         if (!$this->isDirectory($node)) {
-            return false;
+            return; // FIXME: throw
         }
         
         $node->call("system.delete.phtml"); // FIXME: Recurse?
-        return true;
     }
 
     /**
@@ -139,15 +127,23 @@ class Ariadne implements AdapterInterface
      *
      * @param string $path
      *
-     * @return array|false
+     * @return \League\Flysystem\FileAttributes
      */
-    final public function getMetadata($path)
+    final public function getAttributes(string $path): ?FileAttributes
     {
         $node = $this->getObject($path);
         if (!$node) {
-            return false;
+            return null; // FIXME: throw;
         }
-        return $this->normalizeNodeInfo($node);
+        $metaData = this->normalizeNodeInfo($node);
+
+        return new FileAttributes(
+            $path,
+            $metaData['size'],
+            $metaData['visibility'],
+            $metaData['timestamp'],
+            $metaData['mimetype']
+        );
     }
 
     /**
@@ -155,11 +151,11 @@ class Ariadne implements AdapterInterface
      *
      * @param string $path
      *
-     * @return array|false
+     * @return \League\Flysystem\FileAttributes
      */
-    final public function mimeType($path)
+    final public function mimeType(string $path): FileAttributes
     {
-        return $this->getMetadata($path);
+        return $this->getAttributes($path);
     }
 
     /**
@@ -167,11 +163,11 @@ class Ariadne implements AdapterInterface
      *
      * @param string $path
      *
-     * @return array|false
+     * @return \League\Flysystem\FileAttributes
      */
-    final public function fileSize($path)
+    final public function fileSize(string $path): FileAttributes
     {
-        return $this->getMetadata($path);
+        return $this->getAttributes($path);
     }
 
     /**
@@ -179,11 +175,11 @@ class Ariadne implements AdapterInterface
      *
      * @param string $path
      *
-     * @return array|false
+     * @return \League\Flysystem\FileAttributes
      */
-    final public function lastModified($path)
+    final public function lastModified(string $path): FileAttributes
     {
-        return $this->getMetadata($path);
+        return $this->getAttributes($path);
     }
 
     /**
@@ -191,11 +187,11 @@ class Ariadne implements AdapterInterface
      *
      * @param string $path
      *
-     * @return array|false
+     * @return \League\Flysystem\FileAttributes
      */
-    final public function visibility($path)
+    final public function visibility(string $path): FileAttributes
     {
-        return $this->getMetadata($path);
+        return $this->getAttributes($path);
     }
 
     /**
@@ -203,9 +199,9 @@ class Ariadne implements AdapterInterface
      *
      * @param string $path
      *
-     * @return array|bool|null
+     * @return bool
      */
-    final public function fileExists($path)
+    final public function fileExists(string $path): bool
     {
         $fullpath = $this->getFullPath($path);
         return $this->rootObject->exists($fullpath);
@@ -216,9 +212,9 @@ class Ariadne implements AdapterInterface
      *
      * @param string $path
      *
-     * @return array|bool|null
+     * @return bool
      */
-    final public function direcotryExists($path)
+    final public function directoryExists(string $path): bool
     {
         return $this->fileExists($path);
     }
@@ -229,9 +225,9 @@ class Ariadne implements AdapterInterface
      * @param string $directory
      * @param bool $recursive
      *
-     * @return array
+     * @return iterable
      */
-    final public function listContents($directory = '', $recursive = false)
+    final public function listContents(string $directory = '', bool $recursive = false): iterable
     {
         $result = [];
         $directory = $this->getObject($directory);
@@ -252,19 +248,15 @@ class Ariadne implements AdapterInterface
      *
      * @param string $path
      *
-     * @return array|false
-     *
-     * @throws \OCP\Files\InvalidPathException
+     * @return ?string
      */
-    final public function read($path)
+    final public function read(string $path): ?string
     {
         $node = $this->getObject($path);
         if (!$node) {
-            return false;
+            return null; // FIXME: throw
         }
-        return $this->normalizeNodeInfo($node, [
-            'contents' => $node->getFile()
-        ]);
+        return $node->getFile();
     }
 
     /**
@@ -272,17 +264,15 @@ class Ariadne implements AdapterInterface
      *
      * @param string $path
      *
-     * @return array|false
+     * @return resource
      */
-    final public function readStream($path)
+    final public function readStream(string $path)
     {
         $node = $this->getObject($path);
         if (!$node) {
-            return false;
+            return; // FIXME: throw
         }
-        return $this->normlalizeNodeInfo($node, [
-            'contents' => $node->getFileStream()
-        ]);
+        return $node->getFileStream();
     }
 
     /**
@@ -290,20 +280,18 @@ class Ariadne implements AdapterInterface
      *
      * @param string $path
      * @param string $newpath
-     *
-     * @return bool
+     * @param Config $config
      */
-    final public function move($path, $newpath)
+    final public function move(string $path, string $newpath, Config $config): void
     {
         $node = $this->getObject($path);
         if (!$node) {
-            return false;
+            return; // FIXME: Throw
         }
         $fullnewpath = $this->getFullPath($newpath);
         $node->call("system.rename.phtml", array(
             "target" => $fullnewpath // CHECKME: args
         ));
-        return true;
     }
 
     /**
@@ -311,12 +299,10 @@ class Ariadne implements AdapterInterface
      *
      * @param string $path
      * @param string $visibility
-     *
-     * @return array|false file meta data
      */
-    final public function setVisibility($path, $visibility)
+    final public function setVisibility(string $path, string $visibility): void
     {
-        return false;
+        // FIXME: implement something here
     }
 
     /**
@@ -325,20 +311,13 @@ class Ariadne implements AdapterInterface
      * @param string $path
      * @param string $contents
      * @param Config $config Config object
-     *
-     * @return array|false false on failure file meta data on success
      */
-    final public function write($path, $contents, Config $config)
+    final public function write(string $path, string $contents, Config $config): void
     {
-        $result = true;
-
         try {
             if ($this->has($path)) {
                 $node = $this->getObject($path);
                 $node->SaveFile($contents);
-                $result = $this->normalizeNodeInfo($node, [
-                    'contents' => $node->GetFile()
-                ]);
             } else {
                 $filename = basename($path);
                 $dirname = dirname($path);
@@ -358,10 +337,8 @@ class Ariadne implements AdapterInterface
                 $file->SaveFile($contents);
             }
         } catch(\Exception $e) {
-            return false;
+            return;
         }
-
-        return $result;
     }
 
     /**
@@ -370,10 +347,8 @@ class Ariadne implements AdapterInterface
      * @param string $path
      * @param resource $resource
      * @param Config $config Config object
-     *
-     * @return array|false false on failure file meta data on success
      */
-    final public function writeStream($path, $resource, Config $config)
+    final public function writeStream($path, $resource, Config $config): void
     {
         $result = true;
 
@@ -381,9 +356,6 @@ class Ariadne implements AdapterInterface
             if ($this->has($path)) {
                 $node = $this->getObject($path);
                 $node->SaveFile($resource);
-                $result = $this->normalizeNodeInfo($node, [
-                    'contents' => $node->GetFile()
-                ]);
             } else {
                 $filename = basename($path);
                 $dirname = dirname($path);
@@ -405,10 +377,8 @@ class Ariadne implements AdapterInterface
                 $file->SaveFile($resource);
             }
         } catch(\Exception $e) {
-            return false;
+            return; // FIXME: throw
         }
-
-        return $result;
     }
 
     /**
