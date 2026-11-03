@@ -204,7 +204,7 @@ class Ariadne implements FilesystemAdapter
     final public function fileExists(string $path): bool
     {
         $fullpath = $this->getFullPath($path);
-        return $this->rootObject->exists($fullpath);
+        return $this->rootObject->exists($fullpath) && !$this->isDirectory($path);
     }
 
     /**
@@ -216,7 +216,8 @@ class Ariadne implements FilesystemAdapter
      */
     final public function directoryExists(string $path): bool
     {
-        return $this->fileExists($path);
+        $fullpath = $this->getFullPath($path);
+        return $this->rootObject->exists($fullpath) && $this->isDirectory($path);
     }
 
     /**
@@ -406,10 +407,8 @@ class Ariadne implements FilesystemAdapter
             case "pdir":
                 $defaultNls = $node->data->nls->default;
                 return array_merge([
-                    'mimetype' => "directory",
                     'path' => $dirPath,
                     'size' => $node->size,
-                    'basename' => basename($node->path),
                     'timestamp' => $node->data->mtime,
                     'type' => "dir",
                     // @FIXME: check grants to set private or public
@@ -427,7 +426,6 @@ class Ariadne implements FilesystemAdapter
                     'mimetype' => $node->data->$defaultNls->mimetype ?? "text/turtle",
                     'path' => $filePath,
                     'size' => $node->size,
-                    'basename' => basename($node->path),
                     'timestamp' => $node->data->mtime,
                     'type' => "file",
                     // @FIXME: check grants to set private or public
@@ -445,7 +443,6 @@ class Ariadne implements FilesystemAdapter
                     'mimetype' => $node->type,
                     'path' => $filePath,
                     'size' => $node->size,
-                    'basename' => basename($node->path),
                     'timestamp' => $node->data->mtime,
                     'type' => "file",
                     // @FIXME: check grants to set private or public
